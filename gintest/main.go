@@ -66,6 +66,20 @@ func GetDataD(c *gin.Context) {
 	})
 }
 
+type UserDataStruct struct {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+}
+
+func SignUp(c *gin.Context) {
+	var userData UserDataStruct
+	c.Bind(&userData)
+	c.JSON(200, gin.H{
+		"username": userData.UserName,
+		"password": userData.Password + "received",
+	})
+}
+
 func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
@@ -85,6 +99,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/getb", GetDataB)
 	r.GET("/getc", GetDataC)
 	r.GET("/getd", GetDataD)
+	r.POST("/sign-up", SignUp)
 
 	// Get user value
 	r.GET("/user/:name", func(c *gin.Context) {
