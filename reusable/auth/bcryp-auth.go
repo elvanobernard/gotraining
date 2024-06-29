@@ -19,13 +19,15 @@ func CheckPasswordHash(password, hash string) bool {
 
 func TryLogin(db *sql.DB, username, password string) (bool, error) {
 	var hash string
-	row := db.QueryRow("SELECT hash_password FROM users WHERE user_name = ?", username)
-	if err := row.Scan(hash); err != nil {
+	row := db.QueryRow("SELECT password FROM users WHERE user_id = ?", username)
+
+	if err := row.Scan(&hash); err != nil {
+		fmt.Println("check error")
 		if err == sql.ErrNoRows {
 			return false, fmt.Errorf("no user found")
 		}
 
-		return false, fmt.Errorf("error during login")
+		return false, fmt.Errorf("error: %v", err)
 	}
 
 	return CheckPasswordHash(password, hash), nil
@@ -37,10 +39,10 @@ func NewUser(db *sql.DB, username, password string) (int64, error) {
 		return 0, fmt.Errorf("error during creating hash password")
 	}
 
-	result, err := db.Exec("INSERT INTO users (user_name, hash_password) VALUES (?, ?)", username, hash)
+	result, err := db.Exec("INSERT INTO users (user_id, password) VALUES (?, ?)", username, hash)
 
 	if err != nil {
-		return 0, fmt.Errorf("error during inserting to database")
+		return 0, fmt.Errorf("error during inserting to database: %v", err)
 	}
 
 	id, err := result.LastInsertId()

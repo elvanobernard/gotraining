@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+
+	"wolung/reusable/auth"
+	"wolung/reusable/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -74,10 +78,45 @@ type UserDataStruct struct {
 func SignUp(c *gin.Context) {
 	var userData UserDataStruct
 	c.Bind(&userData)
+
+	db := database.GetDb("root", "", "tcp", "127.0.0.1:3306", "gotest")
+
+	result, err := auth.NewUser(db, userData.UserName, userData.Password)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	c.JSON(200, gin.H{
+		"result":   result,
 		"username": userData.UserName,
 		"password": userData.Password + "received",
 	})
+}
+
+func LogIn(c *gin.Context) {
+	var userData UserDataStruct
+	c.Bind(&userData)
+
+	db := database.GetDb("root", "", "tcp", "127.0.0.1:3306", "gotest")
+
+	result, err := auth.TryLogin(db, userData.UserName, userData.Password)
+	fmt.Println(err)
+
+	if err != nil {
+		c.JSON(401, gin.H{
+			"message": err,
+		})
+	} else if !result {
+		c.JSON(401, gin.H{
+			"result": "incorrect password",
+		})
+	} else {
+		c.JSON(200, gin.H{
+			"result": "success log in",
+		})
+	}
+
 }
 
 func setupRouter() *gin.Engine {
@@ -100,6 +139,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/getc", GetDataC)
 	r.GET("/getd", GetDataD)
 	r.POST("/sign-up", SignUp)
+	r.POST("/log-in", LogIn)
 
 	// Get user value
 	r.GET("/user/:name", func(c *gin.Context) {
