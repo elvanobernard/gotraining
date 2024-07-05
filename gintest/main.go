@@ -98,6 +98,13 @@ func LogIn(c *gin.Context) {
 	var userData UserDataStruct
 	c.Bind(&userData)
 
+	if _, err := c.Cookie("jwt_test"); err == nil {
+		c.JSON(200, gin.H{
+			"result": "Already logged in",
+		})
+		return
+	}
+
 	db := database.GetDb("root", "", "tcp", "127.0.0.1:3306", "gotest")
 
 	result, err := auth.TryLogin(db, userData.UserName, userData.Password)
@@ -112,6 +119,7 @@ func LogIn(c *gin.Context) {
 			"result": "incorrect password",
 		})
 	} else {
+		c.SetCookie("jwt_test", "login", 10, "/", "localhost", false, true)
 		c.JSON(200, gin.H{
 			"result": "success log in",
 		})
